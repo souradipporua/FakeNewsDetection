@@ -1,0 +1,142 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+import re
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem.porter import PorterStemmer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import LinearSVC
+from sklearn.naive_bayes import MultinomialNB
+from sklearn import metrics
+
+
+data = pd.read_csv('/content/drive/MyDrive/Colab Notebooks/Train.csv')
+data.head()
+
+
+data.shape
+
+data = data.drop(["title", "subject","date"], axis = 1)
+
+# Shuffling
+data = data.sample(frac=1)
+data.reset_index(inplace=True)
+data.drop(["index"], axis=1, inplace=True)
+
+
+def preprocess_text(text_data):
+	preprocessed_text = []
+
+	for sentence in tqdm(text_data):
+		sentence = re.sub(r'[^\w\s]', '', sentence)
+		preprocessed_text.append(' '.join(token.lower()
+								for token in str(sentence).split()
+								if token not in stopwords.words('english')))
+
+	return preprocessed_text
+
+
+
+
+data.shape
+
+data = data.drop(["title", "subject","date"], axis = 1)
+
+data.isnull().sum()
+
+# Shuffling
+data = data.sample(frac=1)
+data.reset_index(inplace=True)
+data.drop(["index"], axis=1, inplace=True)
+
+
+def preprocess_text(text_data):
+	preprocessed_text = []
+
+	for sentence in tqdm(text_data):
+		sentence = re.sub(r'[^\w\s]', '', sentence)
+		preprocessed_text.append(' '.join(token.lower()
+								for token in str(sentence).split()
+								if token not in stopwords.words('english')))
+
+	return preprocessed_text
+
+preprocessed_review = preprocess_text(data['text'].values)
+data['text'] = preprocessed_review
+
+#Train,test and split the model
+x_train, x_test, y_train, y_test = train_test_split(data['text'],
+													data['class'],
+													test_size=0.25)
+
+
+#vectorization
+vectorization = TfidfVectorizer()
+x_train = vectorization.fit_transform(x_train)
+x_test = vectorization.transform(x_test)
+
+#Training the model in LogisticRegression
+model = LogisticRegression()
+model.fit(x_train, y_train)
+
+# testing the model
+print(accuracy_score(y_train, model.predict(x_train)))
+print(accuracy_score(y_test, model.predict(x_test)))
+
+#Training the model in DecisionTree
+model = DecisionTreeClassifier()
+model.fit(x_train, y_train)
+
+# testing the model
+print(accuracy_score(y_train, model.predict(x_train)))
+print(accuracy_score(y_test, model.predict(x_test)))
+
+
+# Training the model in support vector machine
+model = LinearSVC()
+model.fit(x_train, y_train)
+
+# testing the model
+print(accuracy_score(y_train, model.predict(x_train)))
+print(accuracy_score(y_test, model.predict(x_test)))
+
+
+#Training the model in Naive-Bais
+model = MultinomialNB()
+model.fit(x_train, y_train)
+
+# testing the model
+print(accuracy_score(y_train, model.predict(x_train)))
+print(accuracy_score(y_test, model.predict(x_test)))
+
+
+# Confusion matrix of Results from Decision Tree classification
+
+cm = metrics.confusion_matrix(y_test, model.predict(x_test))
+
+cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=cm,
+											display_labels=[False, True])
+
+cm_display.plot()
+plt.show()
+
+# Confusion matrix of Results from LogisticRegression
+
+cm = metrics.confusion_matrix(y_test, model.predict(x_test))
+
+cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=cm,
+											display_labels=[False, True])
+
+cm_display.plot()
+plt.show()
